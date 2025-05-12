@@ -1,5 +1,6 @@
 import random
 from utils import get_funcs_dict, get_type_dict
+from utils import type_generator
 
 
 class RandomComposer:
