@@ -1,5 +1,5 @@
+import math
 import types
-from typing import Dict
 from typing import (
     get_origin,
     get_args,
@@ -7,17 +7,74 @@ from typing import (
 )
 
 
-def same_origin(dtype1, dtype2):
-    return get_origin(dtype1) == get_origin(dtype2)
-
-def type_origin(dtype):
-    return get_origin(dtype)
-
-def type_args(dtype):
-    return get_args(dtype)
+SINK_KWD = '_'      # the only keyword argument of sink vertices in function graphs
+OUT_KWD = 'out'  # the only keyword argument of output vertices
 
 
-def get_funcs(module):
+def softmax(
+    arr: list[float],
+    temp: float = 0.7
+) -> list[float]:
+    """
+    Compute the softmax of a list of numbers.
+
+    Parameters
+    ----------
+    arr
+        The list of numbers to compute the softmax of.
+
+    Returns
+    -------
+    softmax
+        The softmax of the list of numbers.
+    """
+    exp_arr = [math.exp(x / temp) for x in arr]
+    s = sum(exp_arr)
+    return [x / s for x in exp_arr]
+
+
+def argmax(arr: list[float]) -> int:
+    """
+    Get the index of the maximum element in a list of 
+    NON-NEGATIVE floats.
+
+    Parameters
+    ----------
+    arr
+        The list of floats to find the maximum index of.
+
+    Returns
+    -------
+    max_idx
+        The index of the maximum element in the list.
+
+    """
+    max_itm = -1
+    max_idx = None
+    for e, v in enumerate(arr):
+        if v > max_itm:
+            max_itm = v
+            max_idx = e
+    return max_idx
+
+
+def get_funcs(
+    module: types.ModuleType
+) -> dict[str, types.FunctionType]:
+    """
+    Get all functions from a module.
+
+    Parameters
+    ----------
+    module
+        Module object to inspect.
+
+    Returns
+    -------
+    func_dict
+        A dictionary of {name: function object} where the name is the name of
+        the function and the value is the function object itself.
+    """
     func_dict = {}
     for name in dir(module):
         obj = getattr(module, name)
@@ -26,21 +83,56 @@ def get_funcs(module):
     return func_dict
 
 
-def returns_many(dtype):
-    many = False
-    out_args = get_args(dtype)
-    if out_args and not (dtype == dict or same_origin(dtype, Dict)):
-        many = True
-    return many
+def returns_single(
+    dtype: type
+) -> bool:
+    """
+    Check if a type hint returns a single value.
+    True if dtype is not: (a tuple and has args).
 
 
-def get_types(func):
+    Parameters
+    ----------
+    dtype
+        The type hint to check.
+
+    Returns
+    -------
+    single
+        True if the type hint returns a single value, False otherwise.
+    """
+    return not  (   len(get_args(dtype)) > 0
+                    and 
+                    tuple in (dtype, get_origin(dtype))   )
+
+
+def get_types(
+    func: types.FunctionType
+) -> tuple[dict[str, type], type | tuple[type], bool]:
+    """
+    Get type hints from a function.
+
+    Parameters
+    ----------
+    func
+        Function object to inspect.
+
+    Returns
+    -------
+    inp_type_dict
+        A dictionary of {name: type hint} for each argument of the function.
+    out_type
+        The type hint for the return value of the function. If the function
+        returns a single value, this will be converted into a one-element tuple.
+    single
+        A boolean for whether the original function returns a single value or a tuple.
+    """
     inp_type_dict = get_type_hints(func)
-    del inp_type_dict['return']
-    out_type = get_type_hints(func, include_extras=True).get('return')
+    out_type = inp_type_dict.pop('return')
 
-    single = True
-    if returns_many(out_type):
+    if (single := returns_single(out_type)):
+        out_type = (out_type,)               # comma important: converts to tuple
+    else:
         out_type = get_args(out_type)
-        single = False
+
     return inp_type_dict, out_type, single

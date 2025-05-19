@@ -1,4 +1,5 @@
 # Meta Composition
+`python >= 3.10`
 
 Teaching meta-generalisation through randomly-sampled DSL functions.
 
@@ -12,3 +13,7 @@ Conventions:
 - Input types are always defined as dictionaries {keyword: type}
 - Output types are always defined as tuples (ret1_type, ret2_type, ...)
     - Single-valued functions from `primitives.py` will be converted to return a length-1 tuple
+
+TO-DO:
+- Composition outputs of more than 1 variable
+- Dependent typing

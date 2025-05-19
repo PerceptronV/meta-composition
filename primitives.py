@@ -11,12 +11,6 @@ def int_sub(x: int, y: int) -> int:
 def int_mul(x: int, y: int) -> int:
     return x * y
 
-def int_div(x: int, y: int) -> int:
-    return x // y if y != 0 else 0
-
-def int_mod(x: int, y: int) -> int:
-    return x % y
-
 def int_neg(x: int) -> int:
     return -x
 
